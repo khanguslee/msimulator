@@ -5,7 +5,10 @@ import random
 import pymongo
 from chance import chance
 
+import scenarios
+
 # Setup argparser stuff
+# TODO: --output To specify diagnostic.data output
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('--help', action='help', help='show this help message and exit')
 parser.add_argument("time", help="how long to run simulator in seconds", type=int)
@@ -19,7 +22,8 @@ def generate_data(input_names):
     output_data["last_name"] = chance.last()
     output_data["age"] = chance.age()
     output_data["email"] = chance.email()
-    
+
+    # Optional data
     optional_data = ["phone", "twitter", "country"]
     number_of_optional_data = random.randint(0, len(optional_data))
     for _ in range(number_of_optional_data):
@@ -29,16 +33,6 @@ def generate_data(input_names):
         random_method = getattr(chance, random_choice)
         output_data[random_choice] = random_method()
     return output_data
-
-    
-# Delete a random entry with the same generated name
-def delete_data(input_collection, input_data):
-    random_name = input_data["first_name"]
-    input_collection.delete_one({"first_name": random_name})
-
-# Insert data
-def insert_data(input_collection, input_data):
-    input_collection.insert_one(input_data)
 
 # Delete all data on database
 def cleanup_database(input_collection):
@@ -53,6 +47,7 @@ def initialise_data(number_of_names):
     return output_name_array
 
 def connect_to_test_collection(host, port):
+    # TODO: Check if user already has this database and collection
     client = pymongo.MongoClient(host, port)
     db = client["msimulator"]
     collection = db["test"]
@@ -65,15 +60,26 @@ if __name__ == "__main__":
     mongodb_ip_address = args.host
     mongodb_port = args.port
 
+    # Setup
     collection = connect_to_test_collection(mongodb_ip_address, mongodb_port)
     first_name_array = initialise_data(100)
+    
+    number_of_operations = {}
 
+    # Get all scenario functions
+    test_scenarios = dir(scenarios)[9:]
     initial_time = time.time()
     while True:
-        scenarios = [insert_data, delete_data]
-        chosen_scenario = chance.pickone(scenarios)
+        chosen_scenario = chance.pickone(test_scenarios)
+        # Increment count of number of times a scenario has been called
+        if chosen_scenario not in number_of_operations:
+            number_of_operations[chosen_scenario] = 1
+        else:
+            number_of_operations[chosen_scenario] += 1
+
         data = generate_data(first_name_array)
-        chosen_scenario(collection, data)
+        scenario = getattr(scenarios, chosen_scenario)
+        scenario(collection, data)
 
         # Calculate run time
         current_time = time.time()
@@ -82,6 +88,4 @@ if __name__ == "__main__":
             break
 
     cleanup_database(collection)
-
-
-
+    print(number_of_operations)
