@@ -10,7 +10,7 @@ Use `pipenv` to install libraries listed in the Pipfile
 ```
 python3 main.py <time> [--minutes][--host="localhost"] [--port="27017"] [--number=1]
 ```
-Where `time` is the number of seconds to run this script. Having the `--minutes` flag set will convert your time into minutes.
+Where `time` is the number of seconds to run this script. Having the `--minutes` flag set will convert your time into minutes and `--hours` flag will convert to hours.
 
 By default, the script will connect to `localhost:27017`.
 
