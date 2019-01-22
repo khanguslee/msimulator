@@ -122,7 +122,7 @@ if __name__ == "__main__":
         processes.append(process)
         process.start()
 
-    for proess in processes:
+    for process in processes:
         process.join()
 
     results = [queue.get() for process in processes]
