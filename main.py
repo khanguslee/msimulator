@@ -15,7 +15,11 @@ parser.add_argument('--help', action='help', help='show this help message and ex
 parser.add_argument("time", help="how long to run simulator in seconds", type=int)
 parser.add_argument("-h", "--host", help="IP address of the mongoDB you want to connect to", default="localhost")
 parser.add_argument("-p", "--port", help="port of the mongoDB you want to connect to", default=27017, type=int)
-parser.add_argument("-m", "--minutes", help="change time to minutes", action="store_true")
+
+parser_time_group = parser.add_mutually_exclusive_group()
+parser_time_group.add_argument("-m", "--minutes", help="change time to minutes", action="store_true")
+parser_time_group.add_argument("--hours", help="change time to hours", action="store_true")
+
 parser.add_argument("-n", "--number", help="number of processes to spawn", default=1, type=int)
 
 
@@ -104,10 +108,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     input_run_time = args.time
     is_minutes = args.minutes
+    is_hours = args.hours
 
     if is_minutes:
         print("Running for " + str(input_run_time) + " minutes")
         input_run_time *= 60 
+    elif is_hours:
+        print("Running for " + str(input_run_time) + " hours")
+        input_run_time *= 60*60
     else:
         print("Running for " + str(input_run_time) + " seconds")
 
@@ -117,12 +125,13 @@ if __name__ == "__main__":
     processes = []
     queue = multiprocessing.Queue()
     number_of_processes = args.number
+    print("Spawning " + str(number_of_processes) + " processes")
     for process_id in range(number_of_processes):
         process = multiprocessing.Process(target=run, args=(process_id,input_run_time, mongodb_ip_address,mongodb_port,queue,))
         processes.append(process)
         process.start()
 
-    for proess in processes:
+    for process in processes:
         process.join()
 
     results = [queue.get() for process in processes]
